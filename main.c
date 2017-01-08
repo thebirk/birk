@@ -40,10 +40,8 @@ ENUM(TokenType)
 
 	TokenFloat,
 	TokenDouble,
-
 	TokenUnsigned,
 	TokenSigned,
-
 	TokenReturn,
 	TokenSizeof,
 
