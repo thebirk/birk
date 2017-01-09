@@ -13,7 +13,6 @@ void array_test()
 	FOR_ARRAY(array, it) {
 		printf("%d: %d\n", it_index, it);
 	}
-
 	birk_array_free(array);
 }
 
@@ -106,12 +105,12 @@ void lexer_test()
 	}
 
 	Lexer l = {0};
-	birk_lexer_init(&l, fd.data, fd.size, token_defs, ARRAYSIZE(token_defs), true, true);
+	birk_lexer_init(&l, cast(char*)fd.data, fd.size, token_defs, ARRAYSIZE(token_defs), true, true);
 
 	Token t = birk_lexer_get_token(&l);
 	
 	while(t.type != TokenEof) {
-		printf("%d: %.*s\n", t.type, t.len, t.text);
+		printf("%d: %.*s\n", t.type, cast(int)t.len, t.text);
 
 		t = birk_lexer_get_token(&l);
 	}
@@ -119,8 +118,17 @@ void lexer_test()
 	birk_free_file(fd);
 }
 
+#ifdef BIRK_HAS_FBLOCKS
+void defer_test()
+{
+	defer { printf(", World!\n"); };
+	printf("Hello");
+}
+#endif
+
 int main()
 {
-	lexer_test();
+	//defer_test();
+
 	return 0;
 }

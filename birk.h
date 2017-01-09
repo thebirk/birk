@@ -1,6 +1,10 @@
 #ifndef BIRK_H
 #define BIRK_H
 
+#ifdef __BLOCKS__
+#define BIRK_HAS_FBLOCKS
+#endif /* __BLOCKS__ */
+
 // Includes
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +20,6 @@
 #define STRUCT(name) typedef struct name name; struct name
 #define ENUM(name) typedef enum name name; enum name
 
-
 // Typedefs
 typedef uint64_t u64;
 typedef uint32_t u32;
@@ -28,7 +31,15 @@ typedef int16_t s16;
 typedef int8_t  s8;
 typedef size_t isize;
 
-
+// Defer statements in C. Only supported by gcc and clang as of 09.01.2017
+// Currently not a standard in these compilers so not all 
+// binaries will be built with Blocks support
+#ifdef BIRK_HAS_FBLOCKS
+static inline void birk_defer_cleanup(void (^*b)(void)) { (*b)(); }
+#define birk_defer_join(a, b) a##b
+#define birk_defer_varname(a) birk_defer_join(defer_scopevar_, a)
+#define defer __attribute__((cleanup(birk_defer_cleanup))) void (^birk_defer_varname(__COUNTER__))(void) = ^
+#endif /* BIRK_HAS_BLOCKS */
 
 // Array implementation originally written by Sean Barrett (https://github.com/nothings/stb/blob/master/stretchy_buffer.h)
 #define birk_array_free(a)         ((a) ? free(birk_array_raw(a)),0 : 0)
