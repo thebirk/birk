@@ -432,6 +432,10 @@ Token birk_lexer_get_token(Lexer *l)
 
 		c = *(++l->curr);
 		while(c != '"') {
+			if(c == '\\') {
+				t.len++;
+				l->curr++;
+			}
 			t.len++;
 			c = *(++l->curr);
 		}
