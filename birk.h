@@ -44,8 +44,8 @@ typedef size_t isize;
 #define birk_array_maybegrow(a,n) (birk_array_needgrow(a,(n)) ? birk_array_grow(a,n) : 0)
 #define birk_array_grow(a,n)      ((a) = birk_array_grow_func((a), (n), sizeof(*(a))))
 
-#define FOR_ARRAY(array, type) for(int it_index = 0, it = array[0]; it = array[it_index], it_index < birk_array_count(array); it_index++)
-
+#define FOR_ARRAY(array, it) for(int it_index = 0; it = array[it_index], it_index < birk_array_count(array); it_index++)
+#define FOR_ARRAY_PTR(array, it) for(int it_index = 0; it = &array[it_index], it_index < birk_array_count(array); it_index++)
 
 
 // File handling
@@ -67,7 +67,11 @@ bool birk_is_alpha(int c);
 bool birk_is_alnum(int c);
 bool birk_is_digit(int c);
 
+bool birk_strcmp(char *a, char *b);
 bool birk_strncmp(char *a, char *b, isize n);
+
+char* birk_strcpy(char *str);
+char* birk_strncpy(char *str, isize n);
 
 
 
@@ -195,6 +199,15 @@ bool birk_is_alpha(int c) { return birk_is_lowercase(c) || birk_is_uppercase(c);
 bool birk_is_alnum(int c) { return birk_is_alpha(c) || birk_is_digit(c); }
 bool birk_is_digit(int c) { return ((c >= '0' && (c <= '9'))); }
 
+bool birk_strcmp(char *a, char *b)
+{
+	while(*a && (*a == *b)) {
+		a++;
+		b++;
+	}
+	return ( *cast(unsigned char*)a - *cast(unsigned char*)b );
+}
+
 bool birk_strncmp(char *a, char *b, isize n)
 {
 	while(n && *a && (*a == *b)) {
@@ -208,6 +221,23 @@ bool birk_strncmp(char *a, char *b, isize n)
 	} else {
 		return ( *cast(unsigned char*)a - *cast(unsigned char*)b );
 	}
+}
+
+char* birk_strcpy(char *str)
+{
+	isize len = strlen(str);
+	char *result = malloc(len+1);
+	memcpy(result, str, len);
+	result[len] = 0;
+	return result;
+}
+
+char* birk_strncpy(char *str, isize n)
+{
+	char *result = malloc(n+1);
+	memcpy(result, str, n);
+	result[n] = 0;
+	return result;
 }
 
 // Param: index - The index when the function returned
@@ -255,21 +285,19 @@ void birk_lexer_init(Lexer *l, char *data, isize data_size, TokenDef *token_defs
 }
 
 void birk_lexer_eat_whitespace(Lexer *l)
-{
-	if(l->eat_whitespace) {
-		for(;;) {
-			switch(*l->curr) {
-				case ' ':
-				case '\t':
-				case '\r':
-				case '\n': {
-					l->curr++;
-					continue;
-				} break;
+{	
+	for(;;) {
+		switch(*l->curr) {
+			case ' ':
+			case '\t':
+			case '\r':
+			case '\n': {
+				l->curr++;
+				continue;
+			} break;
 
-				default: {
-					return;
-				}
+			default: {
+				return;
 			}
 		}
 	}
@@ -277,7 +305,7 @@ void birk_lexer_eat_whitespace(Lexer *l)
 
 Token birk_lexer_get_token(Lexer *l)
 {
-	birk_lexer_eat_whitespace(l);
+	if(l->eat_whitespace) birk_lexer_eat_whitespace(l);
 
 	if(l->curr >= l->end) {
 		return cast(Token) {TokenEof, 0, 0};
@@ -293,15 +321,15 @@ Token birk_lexer_get_token(Lexer *l)
 			} break;
 			case ' ': {
 				l->curr++;
-				return cast(Token){TokenSpace, 0, 0};
+				return cast(Token){TokenSpace, l->curr-1, 1};
 			} break;
 			case '\t': {
 				l->curr++;
-				return cast(Token){TokenTab, 0, 0};
+				return cast(Token){TokenTab, l->curr-1, 1};
 			} break;
 			case '\n': {
 				l->curr++;
-				return cast(Token){TokenNewline, 0, 0};
+				return cast(Token){TokenNewline, l->curr-1, 1};
 			} break;
 		}
 	}
@@ -408,13 +436,13 @@ Token birk_lexer_get_token(Lexer *l)
 			c = *(++l->curr);
 		}
 		t.len++;
-		l->curr += 2;
+		l->curr += 1;
 
 		return t;
 	}
 
 	l->curr++;
-	return cast(Token){TokenUnknown, 0, 0};
+	return cast(Token){TokenUnknown, l->curr-1, 1};
 }
 
 #endif /* BIRK_IMPLEMENTATION */
