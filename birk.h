@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 // Helper macros
 #define cast(type) (type)
@@ -44,9 +45,25 @@ typedef size_t isize;
 #define birk_array_maybegrow(a,n) (birk_array_needgrow(a,(n)) ? birk_array_grow(a,n) : 0)
 #define birk_array_grow(a,n)      ((a) = birk_array_grow_func((a), (n), sizeof(*(a))))
 
-#define FOR_ARRAY(array, it) for(int it_index = 0; it = array[it_index], it_index < birk_array_count(array); it_index++)
-#define FOR_ARRAY_PTR(array, it) for(int it_index = 0; it = &array[it_index], it_index < birk_array_count(array); it_index++)
+// Old for loops
+//#define FOR_ARRAY(array, it) for(int it_index = 0; it = array[it_index], it_index < birk_array_count(array); it_index++)
+//#define FOR_ARRAY_PTR(array, it) for(int it_index = 0; it = &array[it_index], it_index < birk_array_count(array); it_index++)
 
+#define FOR_ARRAY(array, item) \
+if(1) { \
+	if(array != 0) { \
+		item = array[0]; \
+		goto body; \
+	} \
+} else body: for(int it_index = 0; item = array[it_index], it_index < birk_array_count(array); it_index++)
+
+#define FOR_ARRAY_PTR(array, item) \
+if(1) { \
+	if(array != 0) { \
+		item = array[0]; \
+		goto body; \
+	} \
+} else body: for(int it_index = 0; item = &array[it_index], it_index < birk_array_count(array); it_index++)
 
 // File handling
 // TODO: Handle bigger than stdlib file sizes, aka use platform dependent code
@@ -164,7 +181,8 @@ FileData birk_read_entire_file(bool zero, char *path)
 		return fd;
 	}
 
-	FILE *f = fopen(path, "rb");
+	FILE *f = 0;
+	errno_t err = fopen_s(&f, path, "rb");
 	if(!f) {
 		return fd;
 	}
