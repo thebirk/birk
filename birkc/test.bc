@@ -1,0 +1,27 @@
+#include "stdlib.h"
+
+child Player : Entity
+{
+	int health;
+};
+
+child Enemy : Entity
+{
+	int health;
+	int damage;
+};
+
+base Entity
+{
+	float x;
+	float y;
+};
+
+int main()
+{
+	Player player = make_Player();
+	Entity *e = (Entity*)&player;
+	printf("typeof: %s\n", EntityNames[e->type]);
+
+	return 0;
+}
