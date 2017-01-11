@@ -128,7 +128,7 @@ void defer_test()
 
 int main()
 {
-	//defer_test();
+	defer_test();
 
 	return 0;
 }

@@ -192,8 +192,7 @@ FileData birk_read_entire_file(bool zero, char *path)
 		return fd;
 	}
 
-	FILE *f = 0;
-	errno_t err = fopen_s(&f, path, "rb");
+	FILE *f = fopen(path, "rb");
 	if(!f) {
 		return fd;
 	}
