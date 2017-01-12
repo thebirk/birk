@@ -126,9 +126,111 @@ void defer_test()
 }
 #endif
 
+/*===================================================================*/
+/*                 Start of FileReader implementation                */
+/*===================================================================*/
+
+ENUM(FileReaderEndian)
+{
+	FileReaderEndianLittle = 0,
+	FileReaderEndianBig,
+};
+
+STRUCT(FileReader)
+{
+	FileData fd;
+	isize offset;
+	FileReaderEndian endianness;
+};
+
+void birk_init_file_reader(FileReader *fr, FileData fd, FileReaderEndian endianness)
+{
+	fr->fd = fd;
+	fr->offset = 0;
+	fr->endianness = endianness;
+}
+
+void birk_set_file_reader_offset(FileReader *fr, isize offset)
+{
+	fr->offset = offset;
+}
+
+void birk_set_file_reader_endianness(FileReader *fr, FileReaderEndian endianness)
+{
+	fr->endianness = endianness;
+}
+
+u8 birk_read_byte(FileReader *fr)
+{
+	return fr->fd.data[fr->offset++];
+}
+
+u8 birk_read_u8(FileReader *fr)
+{
+	return birk_read_byte(fr);
+}
+
+u16 birk_read_u16(FileReader *fr)
+{
+	u8 a = birk_read_byte(fr);
+	u8 b = birk_read_byte(fr);
+
+	if(fr->endianness == FileReaderEndianBig) {
+		return (a << 8) | b;
+	} else {
+		return (b << 8) | a;
+	}
+}
+
+u32 birk_read_u32(FileReader *fr)
+{
+	u8 a = birk_read_byte(fr);
+	u8 b = birk_read_byte(fr);
+	u8 c = birk_read_byte(fr);
+	u8 d = birk_read_byte(fr);
+
+	if(fr->endianness == FileReaderEndianBig) {
+		return (a << 24) | (b << 16) | (c << 8) | d;
+	} else {
+		return (d << 24) | (c << 16) | (b << 8) | a;
+	}
+}
+
+isize birk_read_bytes(FileReader *fr, u8 *buffer, isize buffer_size)
+{
+	isize written = 0;
+	FOR(0, buffer_size) {
+		buffer[i] = fr->fd.data[fr->offset++];
+		written++;
+
+		if(fr->offset >= fr->fd.size) {
+			return written;
+		}
+	}
+
+	return written;
+}
+
+void filereader_test()
+{
+	FileData fd = birk_read_entire_file(false, "main.c");
+	defer { birk_free_file(fd); };
+
+	FileReader fr = {0};
+	birk_init_file_reader(&fr, fd, FileReaderEndianLittle);
+
+	birk_set_file_reader_offset(&fr, 0);
+	u8 buffer[256] = {0};
+	isize read = birk_read_bytes(&fr, buffer, 45);
+	printf("Read: %d byte(s)\n", cast(int)(read));
+	printf("Read in:\n===========================================\n");
+	printf("%.*s\n", cast(int)read, buffer);
+	printf("===========================================\n");
+}
+
 int main()
 {
-	defer_test();
+	filereader_test();
 
 	return 0;
 }

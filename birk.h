@@ -5,22 +5,24 @@
 #define BIRK_HAS_FBLOCKS
 #endif /* __BLOCKS__ */
 
-// Includes
+/* Includes */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
-// Helper macros
+/* Basic helper macros */
 #define cast(type) (type)
 #define ARRAYSIZE(static_array) (sizeof(static_array) / sizeof(static_array[0]))
 #define BIT(n) (1<<n)
 #define FOR(start, end) for(int i = start; i  < end; i++)
 #define STRUCT(name) typedef struct name name; struct name
 #define ENUM(name) typedef enum name name; enum name
+/* Might need more checks here if compiling on platform without attr. packed. */
+#define PACKED_STRUCT(name) typedef struct name name; struct __attribute__((packed)) name
 
-// Typedefs
+/* Some common typedefs */
 typedef uint64_t u64;
 typedef uint32_t u32;
 typedef uint16_t u16;
@@ -31,17 +33,27 @@ typedef int16_t s16;
 typedef int8_t  s8;
 typedef size_t isize;
 
-// Defer statements in C. Only supported by gcc and clang as of 09.01.2017
-// Currently not a standard in these compilers so not all 
-// binaries will be built with Blocks support
+
+
+/*====================================================================*/
+/*                            Defer statements                        */
+/* These are one giant clustefuck made up of two compiler extensions  */
+/* both of which are supported by clang. Will if ifdeffed out if they */
+/* are not supported by the compiler.                                 */
+/*====================================================================*/
 #ifdef BIRK_HAS_FBLOCKS
-static inline void birk_defer_cleanup(void (^*b)(void)) { (*b)(); }
+inline void birk_defer_cleanup(void (^*b)(void)) { (*b)(); }
 #define birk_defer_join(a, b) a##b
 #define birk_defer_varname(a) birk_defer_join(defer_scopevar_, a)
 #define defer __attribute__((cleanup(birk_defer_cleanup))) void (^birk_defer_varname(__COUNTER__))(void) = ^
 #endif /* BIRK_HAS_BLOCKS */
 
-// Array implementation originally written by Sean Barrett (https://github.com/nothings/stb/blob/master/stretchy_buffer.h)
+
+/*===================================================================*/
+/*                          Array implementation                     */
+/*                    Originally written Sean Barret                 */
+/*   (https://github.com/nothings/stb/blob/master/stretchy_buffer.h) */
+/*===================================================================*/
 #define birk_array_free(a)         ((a) ? free(birk_array_raw(a)),0 : 0)
 #define birk_array_push(a,v)       (birk_array_maybegrow(a,1), (a)[birk_array_raw_count(a)++] = (v))
 #define birk_array_count(a)        ((a) ? birk_array_raw_count(a) : 0)
@@ -55,10 +67,6 @@ static inline void birk_defer_cleanup(void (^*b)(void)) { (*b)(); }
 #define birk_array_needgrow(a,n)  ((a)==0 || birk_array_raw_count(a)+(n) >= birk_array_raw_data(a))
 #define birk_array_maybegrow(a,n) (birk_array_needgrow(a,(n)) ? birk_array_grow(a,n) : 0)
 #define birk_array_grow(a,n)      ((a) = birk_array_grow_func((a), (n), sizeof(*(a))))
-
-// Old for loops
-//#define FOR_ARRAY(array, it) for(int it_index = 0; it = array[it_index], it_index < birk_array_count(array); it_index++)
-//#define FOR_ARRAY_PTR(array, it) for(int it_index = 0; it = &array[it_index], it_index < birk_array_count(array); it_index++)
 
 #define FOR_ARRAY(array, item) \
 if(1) { \
@@ -76,7 +84,10 @@ if(1) { \
 	} \
 } else body: for(int it_index = 0; item = &array[it_index], it_index < birk_array_count(array); it_index++)
 
-// File handling
+
+/*===================================================================*/
+/*                          FileData implementation                  */
+/*===================================================================*/
 // TODO: Handle bigger than stdlib file sizes, aka use platform dependent code
 STRUCT(FileData)
 {
@@ -102,8 +113,10 @@ char* birk_strcpy(char *str);
 char* birk_strncpy(char *str, isize n);
 
 
+/*===================================================================*/
+/*                  Customizable lexer implementation                */
+/*===================================================================*/
 
-// Basic lexer
 ENUM(TokenDefType)
 {
 	TokenDefKeyword = 0,

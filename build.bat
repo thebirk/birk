@@ -15,11 +15,11 @@ set USE_FBLOCKS=1
 REM Setup
 
 if /I "%USE_FBLOCKS%" EQU "1" (
-	set FBLOCKS=-fblocks -L"%programfiles%/LLVM/lib" -lBlocksRuntime.lib
+	set FBLOCKS=-fblocks -L"%programfiles%/LLVM/lib" -lBlocksRuntime
 ) else (
 	set FBLOCKS=""
 )
 
-clang -o %OUT% %SRC% %FBLOCKS%
+clang -o %OUT% %SRC% %FBLOCKS% -D_CRT_SECURE_NO_WARNINGS
 
 endlocal
